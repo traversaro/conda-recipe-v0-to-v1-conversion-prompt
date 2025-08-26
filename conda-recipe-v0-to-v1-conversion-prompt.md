@@ -15,6 +15,27 @@ In the following, a bit of suggestions of common errors that both humands and LL
 make when they convert conda recipe v0 to conda recipe v1. Please go through all 
 these list, and make sure that your generated recipe is respecting each point.
 
+### Selectors changed
+
+The selectors are now implemented using actual yml, so if in v0 you have:
+
+~~~
+requirements:
+  host:
+    - pywin32  # [win]
+~~~
+
+in v1 you will have something like:
+
+~~~
+requirements:
+  host:
+    - if: win
+      then:
+        - pywin32
+~~~
+
+
 ### Update conda-forge.yml
 
 Please remember that you also need to add (or update) the keys:
@@ -156,18 +177,57 @@ about:
 
 ## PKG_HASH and PKG_BUILDNUM are not supported anymore in build strings
 
-If the recipe uses the variable, it should use hash and build_number instead, so in v0 we have:
+If the recipe uses the variable, it should use hash instead, so in v0 we have:
 
 ~~~
     build:
-      string: {{ string_prefix }}_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
+      string: {{ string_prefix }}_h{{ PKG_HASH }}
 ~~~
 
 that in v1 needs be converted to:
 
 ~~~
     build:
-      string: ${{ string_prefix }}_h${{ hash }}_${{ build_number }}
+      string: ${{ string_prefix }}_h${{ hash }}
 ~~~
 
+while in case of `PKG_BUILDNUM`, there is no direct equivalent, so make sure
+to define a variable like `build_number` or `number` in the context, and use that one.
+
 See https://github.com/prefix-dev/rattler-build/issues/1622 .
+
+### ignore_run_exports changed location
+
+In v0 you have:
+
+~~~
+  build:
+    ignore_run_exports:
+      - zlib
+~~~
+
+that was changed in v1 to:
+
+~~~
+  requirements:
+    ignore_run_exports:
+      by_name:
+        - zlib
+~~~
+
+while in v0 you have:
+
+~~~
+  build:
+    ignore_run_exports_from:
+        - zlib
+~~~
+
+that was changed in v1 to:
+
+~~~
+  requirements:
+    ignore_run_exports:
+      from_package:
+        - zlib
+~~~
